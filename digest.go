@@ -44,11 +44,13 @@
 package digest
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -240,11 +242,18 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req2.Header[k] = s
 	}
 
+	// Copy req.Body (Io.Reader)
+	// Reference: https://stackoverflow.com/questions/23070876/reading-body-of-http-request-without-modifying-request-state
+	buf, _ := ioutil.ReadAll(req.Body)
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+	req2.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+
 	// Make a request to get the 401 that contains the challenge.
 	resp, err := t.Transport.RoundTrip(req)
 	if err != nil || resp.StatusCode != 401 {
 		return resp, err
 	}
+
 	chal := resp.Header.Get("WWW-Authenticate")
 	c, err := parseChallenge(chal)
 	if err != nil {
