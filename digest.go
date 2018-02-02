@@ -244,9 +244,11 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Copy req.Body (Io.Reader)
 	// Reference: https://stackoverflow.com/questions/23070876/reading-body-of-http-request-without-modifying-request-state
-	buf, _ := ioutil.ReadAll(req.Body)
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
-	req2.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+	if req.Body != nil {
+		buf, _ := ioutil.ReadAll(req.Body)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+		req2.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+	}
 
 	// Make a request to get the 401 that contains the challenge.
 	resp, err := t.Transport.RoundTrip(req)
