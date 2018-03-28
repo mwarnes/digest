@@ -53,6 +53,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"crypto/tls"
 )
 
 var (
@@ -69,13 +70,18 @@ type Transport struct {
 	Transport http.RoundTripper
 }
 
-// NewTransport creates a new digest transport using the http.DefaultTransport.
-func NewTransport(username, password string) *Transport {
+// NewTransport creates a new digest transport, if a tls.Config structure is provided a secure Transport is returned
+// if tls.Config is nil a http.DefaultTransport is used
+func NewTransport(username, password string, tlsConfig *tls.Config) *Transport {
 	t := &Transport{
 		Username: username,
 		Password: password,
 	}
-	t.Transport = http.DefaultTransport
+	if tlsConfig == nil {
+		t.Transport = http.DefaultTransport
+	} else {
+		t.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
 	return t
 }
 
